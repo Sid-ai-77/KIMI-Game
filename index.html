@@ -168,6 +168,7 @@
     </div>
 </div>
 
+<script src="https://code.responsivevoice.org/responsivevoice.js?key=pVaBMnjp"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
@@ -244,27 +245,18 @@ const wrongReactions = ["Khong sao! 괜찮아요! 💪", "Co len! 화이팅! �
 let gameRunning = false, score = 0, combo = 0, maxCombo = 0, correctCount = 0, totalCount = 0, timeLeft = 50;
 let currentSentence = null, timer = null, canAnswer = true;
 
-// Audio - Google TTS with Web Speech API fallback
+// Audio - ResponsiveVoice (works on all mobile)
 function playPronunciation() {
     if (!currentSentence) return;
-    try {
-        const audio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=' + encodeURIComponent(currentSentence.full));
-        audio.volume = 1.0;
-        audio.play().catch(function() {
-            try {
-                const u = new SpeechSynthesisUtterance(currentSentence.full);
-                u.lang = 'ko-KR'; u.rate = 0.8;
-                speechSynthesis.cancel();
-                speechSynthesis.speak(u);
-            } catch(e2) {}
-        });
-    } catch(e) {
+    if (typeof responsiveVoice !== 'undefined') {
+        responsiveVoice.speak(currentSentence.full, 'Korean Female', {rate: 0.9, volume: 1});
+    } else {
         try {
             const u = new SpeechSynthesisUtterance(currentSentence.full);
             u.lang = 'ko-KR'; u.rate = 0.8;
             speechSynthesis.cancel();
             speechSynthesis.speak(u);
-        } catch(e2) {}
+        } catch(e) {}
     }
 }
 
