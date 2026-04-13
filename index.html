@@ -394,7 +394,6 @@ function startGame() {
     document.getElementById('comboDisplay').textContent = '';
     document.getElementById('timerDisplay').textContent = '50';
     document.getElementById('timerDisplay').className = 'hud-timer';
-    unlockAudio();
     showScreen('gameScreen'); startBGM(); showQuestion();
     timer = setInterval(() => {
         timeLeft--;
