@@ -244,12 +244,28 @@ const wrongReactions = ["Khong sao! 괜찮아요! 💪", "Co len! 화이팅! �
 let gameRunning = false, score = 0, combo = 0, maxCombo = 0, correctCount = 0, totalCount = 0, timeLeft = 50;
 let currentSentence = null, timer = null, canAnswer = true;
 
-// Audio
+// Audio - Google TTS with Web Speech API fallback
 function playPronunciation() {
     if (!currentSentence) return;
-    const u = new SpeechSynthesisUtterance(currentSentence.full);
-    u.lang = 'ko-KR'; u.rate = 0.8;
-    speechSynthesis.speak(u);
+    try {
+        const audio = new Audio('https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=' + encodeURIComponent(currentSentence.full));
+        audio.volume = 1.0;
+        audio.play().catch(function() {
+            try {
+                const u = new SpeechSynthesisUtterance(currentSentence.full);
+                u.lang = 'ko-KR'; u.rate = 0.8;
+                speechSynthesis.cancel();
+                speechSynthesis.speak(u);
+            } catch(e2) {}
+        });
+    } catch(e) {
+        try {
+            const u = new SpeechSynthesisUtterance(currentSentence.full);
+            u.lang = 'ko-KR'; u.rate = 0.8;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(u);
+        } catch(e2) {}
+    }
 }
 
 function playNote(freq, dur, type, vol, delay) {
