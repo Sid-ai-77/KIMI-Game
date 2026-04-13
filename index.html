@@ -168,7 +168,6 @@
     </div>
 </div>
 
-<script src="https://code.responsivevoice.org/responsivevoice.js?key=pVaBMnjp"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
@@ -245,19 +244,39 @@ const wrongReactions = ["Khong sao! 괜찮아요! 💪", "Co len! 화이팅! �
 let gameRunning = false, score = 0, combo = 0, maxCombo = 0, correctCount = 0, totalCount = 0, timeLeft = 50;
 let currentSentence = null, timer = null, canAnswer = true;
 
-// Audio - ResponsiveVoice (works on all mobile)
+// Audio - Mobile-friendly TTS
+let audioUnlocked = false;
+
+function unlockAudio() {
+    if (audioUnlocked) return;
+    try {
+        const u = new SpeechSynthesisUtterance('');
+        u.volume = 0;
+        speechSynthesis.speak(u);
+        audioUnlocked = true;
+    } catch(e) {}
+}
+
 function playPronunciation() {
     if (!currentSentence) return;
-    if (typeof responsiveVoice !== 'undefined') {
-        responsiveVoice.speak(currentSentence.full, 'Korean Female', {rate: 0.9, volume: 1});
-    } else {
-        try {
-            const u = new SpeechSynthesisUtterance(currentSentence.full);
-            u.lang = 'ko-KR'; u.rate = 0.8;
-            speechSynthesis.cancel();
-            speechSynthesis.speak(u);
-        } catch(e) {}
+    try {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(currentSentence.full);
+        u.lang = 'ko-KR';
+        u.rate = 0.8;
+        u.volume = 1.0;
+        const voices = speechSynthesis.getVoices();
+        const koVoice = voices.find(v => v.lang.startsWith('ko'));
+        if (koVoice) u.voice = koVoice;
+        speechSynthesis.speak(u);
+    } catch(e) {
+        console.log('TTS failed:', e);
     }
+}
+
+if (typeof speechSynthesis !== 'undefined') {
+    speechSynthesis.getVoices();
+    speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
 }
 
 function playNote(freq, dur, type, vol, delay) {
@@ -335,7 +354,7 @@ function showQuestion() {
         area.appendChild(btn);
     });
 
-    setTimeout(() => playPronunciation(), 300);
+    // User taps speaker button to hear pronunciation
 }
 
 function handleAnswer(btn, chosen) {
@@ -384,6 +403,7 @@ function startGame() {
     document.getElementById('comboDisplay').textContent = '';
     document.getElementById('timerDisplay').textContent = '50';
     document.getElementById('timerDisplay').className = 'hud-timer';
+    unlockAudio();
     showScreen('gameScreen'); startBGM(); showQuestion();
     timer = setInterval(() => {
         timeLeft--;
