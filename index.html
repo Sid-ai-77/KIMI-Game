@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>NULL LI Korean Quiz - 키미쌤</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #F0F4FF 0%, #E8F0FE 50%, #F5F0FF 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh; overflow-x: hidden;
+        }
+        .container { max-width: 500px; margin: 0 auto; padding: 15px; min-height: 100vh; display: flex; flex-direction: column; }
+
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; margin-bottom: 10px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .teacher-mini { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #6C63FF; }
+        .teacher-name { font-size: 0.9rem; font-weight: 700; color: #6C63FF; }
+        .nulri-badge { background: linear-gradient(135deg, #6C63FF, #3F3D56); color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; }
+
+        .screen { display: none; flex-direction: column; align-items: center; flex: 1; justify-content: center; }
+        .screen.active { display: flex; }
+
+        .teacher-img { width: 160px; border-radius: 20px; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(108, 99, 255, 0.2); }
+        .game-title { font-size: 1.8rem; font-weight: 900; color: #333; margin-bottom: 0.3rem; }
+        .game-subtitle { font-size: 1rem; color: #6C63FF; font-weight: 600; margin-bottom: 0.5rem; }
+        .game-desc { color: #777; font-size: 0.85rem; text-align: center; line-height: 1.7; margin-bottom: 1.5rem; padding: 0 1rem; }
+
+        .start-btn { padding: 14px 40px; border: none; border-radius: 50px; background: linear-gradient(135deg, #6C63FF, #3F3D56); color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s; }
+        .start-btn:active { transform: scale(0.95); }
+
+        .hud { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: 16px; padding: 12px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        .hud-score { font-size: 1.3rem; font-weight: 800; color: #6C63FF; }
+        .hud-combo { font-size: 0.8rem; color: #FF6B6B; font-weight: 600; }
+        .hud-timer { font-size: 1.1rem; font-weight: 700; color: #333; }
+        .hud-timer.urgent { color: #F44336; animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        .question-area { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 15px; text-align: center; width: 100%; }
+        .question-label { font-size: 0.75rem; color: #aaa; margin-bottom: 8px; }
+        .sentence-display { font-size: 1.4rem; font-weight: 700; color: #333; line-height: 2; margin-bottom: 8px; word-break: keep-all; }
+        .sentence-display .blank { display: inline-block; min-width: 80px; border-bottom: 3px solid #6C63FF; color: #6C63FF; margin: 0 4px; }
+        .sentence-vi { font-size: 0.95rem; color: #999; margin-bottom: 12px; }
+        .sound-btn { background: linear-gradient(135deg, #6C63FF, #3F3D56); border: none; color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
+        .sound-btn:active { transform: scale(0.9); }
+
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; width: 100%; }
+        .choice-btn { background: #fff; border: 2px solid #eee; border-radius: 14px; padding: 14px 10px; font-size: 1.1rem; font-weight: 700; color: #333; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .choice-btn:active { transform: scale(0.97); }
+        .choice-btn.correct { background: #E8F5E9; border-color: #4CAF50; color: #2E7D32; }
+        .choice-btn.wrong { background: #FFEBEE; border-color: #F44336; color: #C62828; }
+        .choice-btn.show-answer { background: #E8F5E9; border-color: #4CAF50; }
+
+        .feedback { text-align: center; padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 0.9rem; font-weight: 600; display: none; }
+        .feedback.correct-fb { background: #E8F5E9; color: #2E7D32; display: block; }
+        .feedback.wrong-fb { background: #FFEBEE; color: #C62828; display: block; }
+
+        .teacher-reaction { position: fixed; bottom: 20px; right: 20px; display: none; align-items: flex-end; gap: 8px; }
+        .teacher-reaction.show { display: flex; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .reaction-bubble { background: #fff; border-radius: 16px 16px 4px 16px; padding: 10px 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-size: 0.85rem; max-width: 180px; }
+        .reaction-teacher { width: 50px; border-radius: 50%; border: 2px solid #6C63FF; }
+
+        .result-card { background: #fff; border-radius: 24px; padding: 30px; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08); width: 100%; }
+        .result-score { font-size: 3rem; font-weight: 900; color: #6C63FF; }
+        .result-stats { color: #777; font-size: 0.9rem; margin: 10px 0 15px; line-height: 1.8; }
+        .result-msg { font-size: 1.1rem; font-weight: 700; color: #FF6B6B; margin-bottom: 15px; }
+
+        .name-input-area { display: flex; gap: 8px; margin-bottom: 15px; justify-content: center; }
+        .name-input-area input { padding: 10px 14px; border: 2px solid #6C63FF; border-radius: 10px; font-size: 1rem; width: 130px; outline: none; text-align: center; }
+        .name-input-area button { padding: 10px 16px; border: none; border-radius: 10px; background: #6C63FF; color: #fff; font-weight: 700; cursor: pointer; }
+
+        .ranking-box { margin: 15px 0; width: 100%; }
+        .ranking-title { font-size: 0.9rem; font-weight: 700; color: #6C63FF; margin-bottom: 8px; }
+        .ranking-list { list-style: none; background: #FAFAFA; border-radius: 12px; padding: 10px; max-height: 200px; overflow-y: auto; }
+        .ranking-list li { display: flex; justify-content: space-between; padding: 6px 8px; font-size: 0.85rem; border-bottom: 1px solid #f0f0f0; }
+        .ranking-list li:last-child { border: none; }
+        .ranking-list li .rank { font-weight: 800; color: #6C63FF; width: 28px; }
+        .ranking-list li .name { flex: 1; margin: 0 8px; color: #333; }
+        .ranking-list li .pts { font-weight: 700; color: #FF6B6B; }
+        .ranking-list li.mine { background: #EDE7F6; border-radius: 6px; }
+
+        .team-score-bar { background: #EDE7F6; border-radius: 12px; padding: 12px; margin: 10px 0; text-align: center; }
+        .team-score-label { font-size: 0.75rem; color: #6C63FF; }
+        .team-score-value { font-size: 1.5rem; font-weight: 900; color: #3F3D56; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <img src="teacher_kimi.png" class="teacher-mini" alt="키미쌤">
+            <span class="teacher-name">키미쌤</span>
+        </div>
+        <span class="nulri-badge">NULL LI ACADEMY</span>
+    </div>
+
+    <!-- START -->
+    <div class="screen active" id="startScreen">
+        <img src="teacher_kimi.png" class="teacher-img" alt="키미쌤">
+        <div class="game-title">Fill the Blank!</div>
+        <div class="game-subtitle">키미쌤과 함께 빈칸 채우기</div>
+        <div class="game-desc">
+            Dien vao cho trong voi tu tieng Han dung!<br>
+            50 giay - tra loi cang nhieu cang tot!<br>
+            Nghe phat am va chon dap an chinh xac!
+        </div>
+        <button class="start-btn" onclick="startGame()">Bat dau! 시작!</button>
+        <div class="ranking-box" style="margin-top:20px;">
+            <div class="ranking-title">RANKING</div>
+            <ol class="ranking-list" id="startRanking"></ol>
+        </div>
+        <div class="team-score-bar" id="startTeamBar">
+            <div class="team-score-label">Kimi Team Tong diem</div>
+            <div class="team-score-value" id="startTeamValue">0</div>
+        </div>
+    </div>
+
+    <!-- GAME -->
+    <div class="screen" id="gameScreen">
+        <div class="hud" style="width:100%;">
+            <div>
+                <div class="hud-score" id="scoreDisplay">0</div>
+                <div class="hud-combo" id="comboDisplay"></div>
+            </div>
+            <div class="hud-timer" id="timerDisplay">50</div>
+        </div>
+
+        <div class="question-area" id="questionArea">
+            <div class="question-label" id="qLabel">Dien vao cho trong:</div>
+            <div class="sentence-display" id="sentenceDisplay"></div>
+            <div class="sentence-vi" id="sentenceVi"></div>
+            <button class="sound-btn" onclick="playPronunciation()">&#128266;</button>
+        </div>
+
+        <div class="choices" id="choicesArea"></div>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <!-- TEACHER REACTION -->
+    <div class="teacher-reaction" id="teacherReaction">
+        <div class="reaction-bubble" id="reactionText"></div>
+        <img src="teacher_kimi.png" class="reaction-teacher" alt="">
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="screen" id="endScreen">
+        <div class="result-card">
+            <img src="teacher_kimi.png" style="width:80px; border-radius:50%; border:3px solid #6C63FF; margin-bottom:10px;">
+            <div class="result-msg" id="resultMsg"></div>
+            <div class="result-score" id="resultScore">0</div>
+            <div class="result-stats" id="resultStats"></div>
+            <div class="name-input-area" id="nameArea">
+                <input type="text" id="nameInput" placeholder="Ten cua ban" maxlength="8">
+                <button onclick="submitScore()">Dang ky</button>
+            </div>
+            <div class="team-score-bar">
+                <div class="team-score-label">Kimi Team Tong diem</div>
+                <div class="team-score-value" id="endTeamValue">0</div>
+            </div>
+            <div class="ranking-box">
+                <div class="ranking-title">RANKING</div>
+                <ol class="ranking-list" id="endRanking"></ol>
+            </div>
+            <button class="start-btn" onclick="startGame()" style="margin-top:15px;">Choi lai! 다시!</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+
+const firebaseConfig = {
+    apiKey: "AIzaSyA1Ako6g5ratG37-l2C0NWs0_b6S5qdNJ8",
+    authDomain: "krispykreme-game.firebaseapp.com",
+    projectId: "krispykreme-game",
+    storageBucket: "krispykreme-game.firebasestorage.app",
+    messagingSenderId: "892904322375",
+    appId: "1:892904322375:web:bf2c82e9dae4163e05c862",
+    databaseURL: "https://krispykreme-game-default-rtdb.firebaseio.com"
+};
+let db = null, firebaseReady = false;
+try { firebase.initializeApp(firebaseConfig); db = firebase.database(); firebaseReady = true; } catch(e) {}
+
+// Sentence patterns with blanks
+const sentences = [
+    { full: "안녕하세요", blank: "___하세요", answer: "안녕", choices: ["안녕", "감사", "미안", "실례"], vi: "Xin chao", roman: "an-nyeong-ha-se-yo" },
+    { full: "감사합니다", blank: "___합니다", answer: "감사", choices: ["감사", "미안", "안녕", "축하"], vi: "Cam on", roman: "gam-sa-ham-ni-da" },
+    { full: "사랑해요", blank: "___해요", answer: "사랑", choices: ["사랑", "걱정", "행복", "미안"], vi: "Yeu ban", roman: "sa-rang-hae-yo" },
+    { full: "미안합니다", blank: "___합니다", answer: "미안", choices: ["미안", "감사", "축하", "안녕"], vi: "Xin loi", roman: "mi-an-ham-ni-da" },
+    { full: "축하합니다", blank: "___합니다", answer: "축하", choices: ["축하", "감사", "미안", "걱정"], vi: "Chuc mung", roman: "chuk-ha-ham-ni-da" },
+    { full: "행복하다", blank: "___하다", answer: "행복", choices: ["행복", "슬픔", "걱정", "피곤"], vi: "Hanh phuc", roman: "haeng-bok-ha-da" },
+    { full: "학교에 가다", blank: "___에 가다", answer: "학교", choices: ["학교", "병원", "식당", "공원"], vi: "Di den truong", roman: "hak-gyo-e ga-da" },
+    { full: "음악을 듣다", blank: "___을 듣다", answer: "음악", choices: ["음악", "영화", "노래", "뉴스"], vi: "Nghe nhac", roman: "eum-ag-eul deut-da" },
+    { full: "밥을 먹다", blank: "___을 먹다", answer: "밥", choices: ["밥", "물", "차", "빵"], vi: "An com", roman: "bab-eul meok-da" },
+    { full: "물을 마시다", blank: "___을 마시다", answer: "물", choices: ["물", "밥", "과일", "고기"], vi: "Uong nuoc", roman: "mul-eul ma-si-da" },
+    { full: "노래를 부르다", blank: "___를 부르다", answer: "노래", choices: ["노래", "춤", "음악", "영화"], vi: "Hat bai hat", roman: "no-rae-reul bu-reu-da" },
+    { full: "춤을 추다", blank: "___을 추다", answer: "춤", choices: ["춤", "노래", "운동", "게임"], vi: "Nhay mua", roman: "chum-eul chu-da" },
+    { full: "영화를 보다", blank: "___를 보다", answer: "영화", choices: ["영화", "음악", "책", "게임"], vi: "Xem phim", roman: "yeong-hwa-reul bo-da" },
+    { full: "친구를 만나다", blank: "___를 만나다", answer: "친구", choices: ["친구", "선생님", "가족", "동생"], vi: "Gap ban be", roman: "chin-gu-reul man-na-da" },
+    { full: "선생님이 좋다", blank: "___이 좋다", answer: "선생님", choices: ["선생님", "학생", "친구", "동생"], vi: "Giao vien tot", roman: "seon-saeng-nim-i jo-ta" },
+    { full: "오늘 날씨가 좋다", blank: "___ 날씨가 좋다", answer: "오늘", choices: ["오늘", "내일", "어제", "매일"], vi: "Hom nay thoi tiet tot", roman: "o-neul nal-ssi-ga jo-ta" },
+    { full: "내일 만나요", blank: "___ 만나요", answer: "내일", choices: ["내일", "오늘", "어제", "지금"], vi: "Gap nhau ngay mai", roman: "nae-il man-na-yo" },
+    { full: "꽃이 예쁘다", blank: "___이 예쁘다", answer: "꽃", choices: ["꽃", "나무", "하늘", "바다"], vi: "Hoa dep", roman: "kkot-i ye-ppeu-da" },
+    { full: "하늘이 파랗다", blank: "___이 파랗다", answer: "하늘", choices: ["하늘", "바다", "산", "꽃"], vi: "Bau troi xanh", roman: "ha-neul-i pa-ra-ta" },
+    { full: "바다가 넓다", blank: "___가 넓다", answer: "바다", choices: ["바다", "산", "강", "하늘"], vi: "Bien rong", roman: "ba-da-ga neol-da" },
+    { full: "고양이가 귀엽다", blank: "___가 귀엽다", answer: "고양이", choices: ["고양이", "강아지", "토끼", "새"], vi: "Con meo dang yeu", roman: "go-yang-i-ga gwi-yeop-da" },
+    { full: "강아지를 좋아하다", blank: "___를 좋아하다", answer: "강아지", choices: ["강아지", "고양이", "새", "물고기"], vi: "Thich con cho", roman: "gang-a-ji-reul jo-a-ha-da" },
+    { full: "사진을 찍다", blank: "___을 찍다", answer: "사진", choices: ["사진", "영화", "그림", "노래"], vi: "Chup anh", roman: "sa-jin-eul jjik-da" },
+    { full: "책을 읽다", blank: "___을 읽다", answer: "책", choices: ["책", "신문", "편지", "메모"], vi: "Doc sach", roman: "chaeg-eul ik-da" },
+    { full: "옷을 입다", blank: "___을 입다", answer: "옷", choices: ["옷", "신발", "모자", "안경"], vi: "Mac quan ao", roman: "os-eul ip-da" },
+    { full: "커피를 마시다", blank: "___를 마시다", answer: "커피", choices: ["커피", "주스", "우유", "차"], vi: "Uong ca phe", roman: "keo-pi-reul ma-si-da" },
+    { full: "집에 가다", blank: "___에 가다", answer: "집", choices: ["집", "학교", "회사", "공원"], vi: "Ve nha", roman: "jib-e ga-da" },
+    { full: "운동을 하다", blank: "___을 하다", answer: "운동", choices: ["운동", "공부", "요리", "청소"], vi: "Tap the duc", roman: "un-dong-eul ha-da" },
+    { full: "공부를 하다", blank: "___를 하다", answer: "공부", choices: ["공부", "운동", "요리", "게임"], vi: "Hoc bai", roman: "gong-bu-reul ha-da" },
+    { full: "전화를 하다", blank: "___를 하다", answer: "전화", choices: ["전화", "문자", "이메일", "편지"], vi: "Goi dien thoai", roman: "jeon-hwa-reul ha-da" },
+    { full: "생일 축하해요", blank: "___ 축하해요", answer: "생일", choices: ["생일", "졸업", "결혼", "입학"], vi: "Chuc mung sinh nhat", roman: "saeng-il chuk-ha-hae-yo" },
+    { full: "아침에 일어나다", blank: "___에 일어나다", answer: "아침", choices: ["아침", "저녁", "밤", "점심"], vi: "Sang thuc day", roman: "a-chim-e i-reo-na-da" },
+    { full: "저녁을 먹다", blank: "___을 먹다", answer: "저녁", choices: ["저녁", "아침", "점심", "간식"], vi: "An toi", roman: "jeo-nyeog-eul meok-da" },
+    { full: "별이 빛나다", blank: "___이 빛나다", answer: "별", choices: ["별", "달", "해", "구름"], vi: "Ngoi sao sang", roman: "byeol-i bit-na-da" },
+    { full: "달이 밝다", blank: "___이 밝다", answer: "달", choices: ["달", "별", "해", "불"], vi: "Mat trang sang", roman: "dal-i balk-da" },
+    { full: "비가 오다", blank: "___가 오다", answer: "비", choices: ["비", "눈", "바람", "구름"], vi: "Troi mua", roman: "bi-ga o-da" },
+    { full: "눈이 오다", blank: "___이 오다", answer: "눈", choices: ["눈", "비", "바람", "해"], vi: "Tuyet roi", roman: "nun-i o-da" },
+    { full: "바람이 불다", blank: "___이 불다", answer: "바람", choices: ["바람", "비", "눈", "구름"], vi: "Gio thoi", roman: "ba-ram-i bul-da" },
+    { full: "꿈을 꾸다", blank: "___을 꾸다", answer: "꿈", choices: ["꿈", "잠", "생각", "기억"], vi: "Mo giac mo", roman: "kkum-eul kku-da" },
+    { full: "마음이 따뜻하다", blank: "___이 따뜻하다", answer: "마음", choices: ["마음", "손", "얼굴", "몸"], vi: "Trai tim am ap", roman: "ma-eum-i tta-tteu-ta-da" },
+    { full: "무대에 서다", blank: "___에 서다", answer: "무대", choices: ["무대", "교실", "운동장", "집"], vi: "Dung tren san khau", roman: "mu-dae-e seo-da" },
+    { full: "연습을 하다", blank: "___을 하다", answer: "연습", choices: ["연습", "공부", "운동", "요리"], vi: "Luyen tap", roman: "yeon-seub-eul ha-da" },
+    { full: "팬이 응원하다", blank: "___이 응원하다", answer: "팬", choices: ["팬", "선수", "가수", "배우"], vi: "Fan co vu", roman: "paen-i eung-won-ha-da" },
+    { full: "콘서트에 가다", blank: "___에 가다", answer: "콘서트", choices: ["콘서트", "학교", "병원", "회사"], vi: "Di xem hoa nhac", roman: "kon-seo-teu-e ga-da" },
+    { full: "아이돌이 멋있다", blank: "___이 멋있다", answer: "아이돌", choices: ["아이돌", "선생님", "친구", "학생"], vi: "Than tuong dep trai", roman: "a-i-dol-i meo-sit-da" },
+    { full: "앨범을 사다", blank: "___을 사다", answer: "앨범", choices: ["앨범", "옷", "신발", "가방"], vi: "Mua album", roman: "ael-beom-eul sa-da" },
+    { full: "데뷔를 하다", blank: "___를 하다", answer: "데뷔", choices: ["데뷔", "졸업", "입학", "퇴근"], vi: "Ra mat", roman: "de-bwi-reul ha-da" },
+    { full: "한국어를 배우다", blank: "___를 배우다", answer: "한국어", choices: ["한국어", "영어", "일본어", "중국어"], vi: "Hoc tieng Han", roman: "han-gug-eo-reul bae-u-da" },
+    { full: "화이팅을 외치다", blank: "___을 외치다", answer: "화이팅", choices: ["화이팅", "만세", "대박", "최고"], vi: "Het len co len", roman: "hwa-i-ting-eul oe-chi-da" },
+    { full: "기분이 좋다", blank: "___이 좋다", answer: "기분", choices: ["기분", "마음", "생각", "느낌"], vi: "Tam trang tot", roman: "gi-bun-i jo-ta" },
+];
+
+const correctReactions = ["Tuyet voi! 완벽해요! 👏", "Cool! 잘했어요! ⭐", "Nice! 대단해! 🎉", "Dung roi! 맞아요! ✨", "Perfect! 최고! 💜"];
+const wrongReactions = ["Khong sao! 괜찮아요! 💪", "Co len! 화이팅! 🌟", "Gan dung roi! 다시 해봐요! 😊"];
+
+let gameRunning = false, score = 0, combo = 0, maxCombo = 0, correctCount = 0, totalCount = 0, timeLeft = 50;
+let currentSentence = null, timer = null, canAnswer = true;
+
+// Audio
+function playPronunciation() {
+    if (!currentSentence) return;
+    const u = new SpeechSynthesisUtterance(currentSentence.full);
+    u.lang = 'ko-KR'; u.rate = 0.8;
+    speechSynthesis.speak(u);
+}
+
+function playNote(freq, dur, type, vol, delay) {
+    try {
+        const ctx = new AudioContext();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = type || 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(vol || 0.1, ctx.currentTime + (delay||0));
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (delay||0) + dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + (delay||0)); o.stop(ctx.currentTime + (delay||0) + dur);
+    } catch(e) {}
+}
+function playCorrectSfx() { playNote(523, 0.08, 'sine', 0.12); playNote(659, 0.08, 'sine', 0.1, 0.04); }
+function playWrongSfx() { playNote(200, 0.15, 'triangle', 0.06); }
+function playComboSfx() { [523,659,784,1047].forEach((f,i) => playNote(f, 0.1, 'sine', 0.08, i*0.06)); }
+
+// BGM
+let bgmCtx=null, bgmInterval=null, bgmGain=null, bgmPlaying=false;
+function startBGM() {
+    if(bgmPlaying) return;
+    bgmCtx = new (window.AudioContext||window.webkitAudioContext)();
+    bgmGain = bgmCtx.createGain(); bgmGain.gain.value = 0.2; bgmGain.connect(bgmCtx.destination);
+    bgmPlaying = true;
+    let beat = 0;
+    const mel = [330,370,415,440,494,440,415,370,330,294,330,370,415,440,494,523];
+    const bas = [165,165,185,185,220,220,208,208,165,165,185,185,220,220,208,208];
+    const bpm = 120, beatMs = 60000/bpm;
+    bgmInterval = setInterval(() => {
+        if(!bgmCtx) return;
+        const idx = beat%16, t = bgmCtx.currentTime;
+        const mO = bgmCtx.createOscillator(), mG = bgmCtx.createGain();
+        mO.type='sine'; mO.frequency.value=mel[idx];
+        mG.gain.setValueAtTime(0.04,t); mG.gain.exponentialRampToValueAtTime(0.001,t+beatMs/1000*0.7);
+        mO.connect(mG); mG.connect(bgmGain); mO.start(t); mO.stop(t+beatMs/1000*0.7);
+        const bO = bgmCtx.createOscillator(), bG = bgmCtx.createGain();
+        bO.type='triangle'; bO.frequency.value=bas[idx];
+        bG.gain.setValueAtTime(0.05,t); bG.gain.exponentialRampToValueAtTime(0.001,t+beatMs/1000*0.8);
+        bO.connect(bG); bG.connect(bgmGain); bO.start(t); bO.stop(t+beatMs/1000*0.8);
+        if(idx%4===0){const kO=bgmCtx.createOscillator(),kG=bgmCtx.createGain();kO.frequency.setValueAtTime(100,t);kO.frequency.exponentialRampToValueAtTime(40,t+0.06);kG.gain.setValueAtTime(0.07,t);kG.gain.exponentialRampToValueAtTime(0.001,t+0.08);kO.connect(kG);kG.connect(bgmGain);kO.start(t);kO.stop(t+0.08);}
+        beat++;
+    }, beatMs);
+}
+function stopBGM(){bgmPlaying=false;if(bgmInterval){clearInterval(bgmInterval);bgmInterval=null;}if(bgmGain)try{bgmGain.gain.setValueAtTime(0,bgmCtx.currentTime);}catch(e){}}
+
+function showReaction(correct) {
+    const el = document.getElementById('teacherReaction');
+    const txt = document.getElementById('reactionText');
+    const list = correct ? correctReactions : wrongReactions;
+    txt.textContent = list[Math.floor(Math.random() * list.length)];
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+function showQuestion() {
+    if (!gameRunning) return;
+    canAnswer = true;
+    const idx = Math.floor(Math.random() * sentences.length);
+    currentSentence = sentences[idx];
+
+    document.getElementById('sentenceDisplay').innerHTML = currentSentence.blank.replace('___', '<span class="blank">?</span>');
+    document.getElementById('sentenceVi').textContent = currentSentence.vi;
+    document.getElementById('qLabel').textContent = `[${currentSentence.roman}] Dien vao cho trong:`;
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('feedback').style.display = 'none';
+
+    const shuffled = [...currentSentence.choices].sort(() => Math.random() - 0.5);
+    const area = document.getElementById('choicesArea');
+    area.innerHTML = '';
+    shuffled.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = 'choice-btn';
+        btn.textContent = c;
+        btn.onclick = () => handleAnswer(btn, c);
+        area.appendChild(btn);
+    });
+
+    setTimeout(() => playPronunciation(), 300);
+}
+
+function handleAnswer(btn, chosen) {
+    if (!canAnswer || !gameRunning) return;
+    canAnswer = false;
+    totalCount++;
+    const isCorrect = chosen === currentSentence.answer;
+    const fb = document.getElementById('feedback');
+
+    document.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.textContent === currentSentence.answer) b.classList.add('show-answer');
+        if (b === btn && !isCorrect) b.classList.add('wrong');
+        if (b === btn && isCorrect) b.classList.add('correct');
+    });
+
+    if (isCorrect) {
+        correctCount++; combo++;
+        if (combo > maxCombo) maxCombo = combo;
+        const mult = combo >= 5 ? 3 : combo >= 3 ? 2 : 1;
+        const points = 10 * mult;
+        score += points;
+        fb.className = 'feedback correct-fb';
+        fb.innerHTML = `✅ ${currentSentence.full} = ${currentSentence.vi} (+${points})`;
+        fb.style.display = 'block';
+        document.getElementById('scoreDisplay').textContent = score;
+        document.getElementById('comboDisplay').textContent = combo >= 2 ? `${combo} COMBO! x${mult}` : '';
+        if (combo >= 3) playComboSfx(); else playCorrectSfx();
+        showReaction(true);
+    } else {
+        combo = 0;
+        fb.className = 'feedback wrong-fb';
+        fb.innerHTML = `❌ ${currentSentence.full} = ${currentSentence.vi}`;
+        fb.style.display = 'block';
+        document.getElementById('comboDisplay').textContent = '';
+        playWrongSfx();
+        showReaction(false);
+    }
+    setTimeout(() => { if (gameRunning) showQuestion(); }, isCorrect ? 800 : 1500);
+}
+
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+function startGame() {
+    score=0; combo=0; maxCombo=0; correctCount=0; totalCount=0; timeLeft=50; gameRunning=true;
+    document.getElementById('scoreDisplay').textContent = '0';
+    document.getElementById('comboDisplay').textContent = '';
+    document.getElementById('timerDisplay').textContent = '50';
+    document.getElementById('timerDisplay').className = 'hud-timer';
+    showScreen('gameScreen'); startBGM(); showQuestion();
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timerDisplay').textContent = timeLeft;
+        if (timeLeft <= 5) document.getElementById('timerDisplay').className = 'hud-timer urgent';
+        if (timeLeft <= 0) endGame();
+    }, 1000);
+}
+
+function endGame() {
+    gameRunning = false; stopBGM();
+    if (timer) { clearInterval(timer); timer = null; }
+    const acc = totalCount > 0 ? Math.round((correctCount/totalCount)*100) : 0;
+    let msg = acc >= 90 ? 'Xuat sac! 완벽! 🏆' : acc >= 70 ? 'Gioi lam! 잘했어! ⭐' : acc >= 50 ? 'Tot lam! 좋아! 👏' : 'Co len! 화이팅! 💪';
+    document.getElementById('resultScore').textContent = score;
+    document.getElementById('resultMsg').textContent = msg;
+    document.getElementById('resultStats').innerHTML = `Dung: ${correctCount}/${totalCount} (${acc}%)<br>Combo cao nhat: ${maxCombo}`;
+    document.getElementById('nameArea').style.display = 'flex';
+    document.getElementById('nameInput').value = '';
+    if (firebaseReady && db) { db.ref('kimi_team_total').transaction(v => (v||0)+score); loadTeamScore('endTeamValue'); }
+    loadRankings('endRanking');
+    showScreen('endScreen');
+}
+
+function loadRankings(targetId) {
+    if (firebaseReady && db) {
+        db.ref('kimi_rankings').orderByChild('score').limitToLast(10).once('value', snap => { renderRankings(snap.val(), targetId); });
+    } else { renderRankings(null, targetId); }
+}
+function renderRankings(data, targetId) {
+    const list = document.getElementById(targetId); list.innerHTML = '';
+    const rankings = data ? Object.values(data).sort((a,b) => b.score-a.score) : [];
+    if (!rankings.length) { list.innerHTML = '<li style="justify-content:center;color:#999;">Chua co ket qua</li>'; return; }
+    rankings.slice(0,10).forEach((r,i) => {
+        const li = document.createElement('li');
+        const m = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+        li.innerHTML = `<span class="rank">${m}</span><span class="name">${r.name}</span><span class="pts">${r.score}</span>`;
+        list.appendChild(li);
+    });
+}
+function submitScore() {
+    const name = document.getElementById('nameInput').value.trim() || 'Anonymous';
+    if (firebaseReady && db) {
+        db.ref('kimi_rankings').push({name, score, timestamp: Date.now()}).then(() => {
+            db.ref('kimi_rankings').orderByChild('score').limitToLast(10).once('value', snap => { renderRankings(snap.val(), 'endRanking'); });
+        });
+    }
+    document.getElementById('nameArea').style.display = 'none';
+}
+function loadTeamScore(targetId) {
+    if (firebaseReady && db) { db.ref('kimi_team_total').once('value', snap => { document.getElementById(targetId).textContent = (snap.val()||0).toLocaleString(); }); }
+}
+
+loadRankings('startRanking');
+loadTeamScore('startTeamValue');
+</script>
+</body>
+</html>
